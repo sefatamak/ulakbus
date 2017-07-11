@@ -53,7 +53,7 @@ class User(Model, BaseUser):
     surname = field.String(_(u"Soyad"), index=True)
     superuser = field.Boolean(_(u"Super user"), default=False)
     last_login_role_key = field.String(_(u"Son Giriş Yapılan Rol"))
-    is_active = field.Boolean(_(u"Kullanıcı Aktifliği"))
+    is_active = field.Boolean(_(u"Kullanıcı Aktifliği"),default=True)
     locale_language = field.String(
         _(u"Tercih Edilen Dil Formatı"),
         index=False,
