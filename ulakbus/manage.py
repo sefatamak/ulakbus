@@ -20,7 +20,8 @@ class CreateUser(Command):
         {'name': 'password', 'required': True, 'help': 'Login password'},
         {'name': 'abstract_role', 'default': 'BaseAbsRole', 'help': 'Name of the AbstractRole'},
         {'name': 'super', 'action': 'store_true', 'help': 'This is a super user'},
-        {'name': 'active', 'action': 'store_true' , 'help': 'This is a active user'},
+        {'name': 'active', 'action': 'store_true', 'help': 'This is a active user'},
+        {'name': 'active_user', 'help': 'Users activity status'},
         {'name': 'permission_query', 'default': "code:crud* OR code:login* OR code:logout*",
          'help': 'Permissions which will be returned from this query will be granted to the user. '
                  'Defaults to: "code:crud* OR code:login* OR code:logout*"'},
@@ -28,11 +29,20 @@ class CreateUser(Command):
 
     def run(self):
         from ulakbus.models import AbstractRole, User, Role, Permission
+        if self.manager.args.active_user:
+            user = User.objects.get(username=self.manager.args.username)
+            user.is_active = self.manager.args.active_user
+            user.save()
+            return
         if User.objects.filter(username=self.manager.args.username).count():
             print("User already exists!")
             return
+        if not self.manager.args.active:
+            print(
+                "Kullanıcının sisteme login olmasını istiyorsanız aktifleştirmeyi unutmayin. Aktifleştirmek için --active_user komutunu kullanın.")
         abs_role, new = AbstractRole.objects.get_or_create(name=self.manager.args.abstract_role)
-        user = User(username=self.manager.args.username, superuser=self.manager.args.super, is_active=self.manager.args.active)
+        user = User(username=self.manager.args.username, superuser=self.manager.args.super,
+                    is_active=self.manager.args.active)
         user.set_password(self.manager.args.password)
         user.save()
         role = Role(user=user, abstract_role=abs_role)
@@ -318,6 +328,7 @@ class DeployZatoServices(Command):
         service_payload["payload"] = payload
 
         return service_payload
+
 
 environ['PYOKO_SETTINGS'] = 'ulakbus.settings'
 environ['ZENGINE_SETTINGS'] = 'ulakbus.settings'
