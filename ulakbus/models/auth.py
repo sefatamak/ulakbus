@@ -425,7 +425,9 @@ class Role(Model):
         Args:
              perm: :class:`Permission` object.
         """
-        del self.Permissions[perm.key]
+        for p in Permission.objects.filter(code__contains=perm):
+            if p in self.Permissions:
+                del self.Permissions[p]
         PermissionCache(self.key).delete()
         self.save()
 

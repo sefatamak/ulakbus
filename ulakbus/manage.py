@@ -318,7 +318,69 @@ class DeployZatoServices(Command):
 
         return service_payload
 
-environ['PYOKO_SETTINGS'] = 'ulakbus.settings'
+class RoleProcess(Command):
+    CMD_NAME = 'role_process'
+    HELP = """Role ekleme,cikarma ve arama islemleri yapilir."""
+    PARAMS = [
+        {'name': 'username', 'required': True, 'help': 'Login username'},
+        {'name': 'add', 'help': 'Add permission.[Required : Role name]'}, #permission add delete list olarak degistirilebilir. Role name ile birlikte kullanilir.
+        {'name': 'delete', 'help': 'Delete permission.[Required:Role name'}, #Role name ile birlikte kullanilir.
+        {'name': 'list', 'action': 'store_true', 'help': 'Permissions list'},
+        {'name': 'search', 'help': 'Search permission.Parameter:[Permission name]'},
+        {'name': 'role_name', 'help': 'Role name'},
+        {'name': 'add_role', 'help': 'Role add [Role key]'},
+        {'name': 'delete_role', 'help': 'Role delete.Parameter:[Role name]'}
+    ]
+
+    def run(self):
+        from ulakbus.models import User,Role
+        user = User.objects.get(username=self.manager.args.username)
+        role_list = []
+        for i in user.role_set:
+            print i.role.key
+            r = Role.objects.get(i.role.key,delete=False)
+            role_list.append(r)
+
+        if self.manager.args.list:
+            j = 0
+            for i in role_list:
+                name = i.name.split('|')
+                print name[0],"Rolüne Ait İzinlerin Listesi\n\n"
+                print i.get_permissions(),"\n\n"
+        if self.manager.args.add:
+            role_name = self.manager.args.role_name.split('|')[0] + " | %s" %(user.username)
+            role = Role.objects.get(name=role_name,delete=False)
+            role.add_permission_by_name(self.manager.args.add,True)
+            role.save()
+        if self.manager.args.search:
+            if self.manager.args.search in role_list:
+                print "Aranan izin bulundu."
+            else:
+                print "Aranan izin bulunamadi."
+        if self.manager.args.delete:
+            role_name = self.manager.args.role_name.split('|')[0] + " | %s" %(user.username)
+            role = Role.objects.get(name=role_name)
+            role.remove_permission(self.manager.args.delete)
+            role.save()
+        if self.manager.args.add_role:
+            role = Role.objects.get(self.manager.args.add_role)
+            print role.name,role.delete
+            role.user = user
+            role.save()
+        if self.manager.args.delete_role:
+            role = Role.objects.get(self.manager.args.delete_role)
+            role.user = User()
+            role.save()
+            for i,r in enumerate(user.role_set):
+                print i,r
+                if r.role.key == self.manager.args.delete_role:
+                    print user.role_set[i]
+                    user.role_set[i].remove()
+                    user.blocking_save()
+                    return
+
+
+environ['PYOKO_SETTINGS'] = 'ulakubus.settings'
 environ['ZENGINE_SETTINGS'] = 'ulakbus.settings'
 
 if __name__ == '__main__':
