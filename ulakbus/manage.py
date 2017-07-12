@@ -21,7 +21,8 @@ class CreateUser(Command):
         {'name': 'abstract_role', 'default': 'BaseAbsRole', 'help': 'Name of the AbstractRole'},
         {'name': 'super', 'action': 'store_true', 'help': 'This is a super user'},
         {'name': 'active', 'action': 'store_true', 'help': 'This is a active user'},
-        {'name': 'active_user', 'help': 'Users activity status'},
+        {'name': 'toggle_user_activeness',
+         'help': 'Users activity status, True : This makes the user active False : This makes the user passive'},
         {'name': 'permission_query', 'default': "code:crud* OR code:login* OR code:logout*",
          'help': 'Permissions which will be returned from this query will be granted to the user. '
                  'Defaults to: "code:crud* OR code:login* OR code:logout*"'},
@@ -29,11 +30,24 @@ class CreateUser(Command):
 
     def run(self):
         from ulakbus.models import AbstractRole, User, Role, Permission
-        if self.manager.args.active_user:
-            user = User.objects.get(username=self.manager.args.username)
-            user.is_active = self.manager.args.active_user
-            user.save()
+        import distutils.util
+        from pyoko.exceptions import ObjectDoesNotExist
+        # update
+        if self.manager.args.toggle_user_activeness is not None:
+            try:
+                user = User.objects.get(username=self.manager.args.username)
+            except ObjectDoesNotExist:
+                print "Böyle bir kullanıcı bulunmamaktadır."
+                return
+            activeness = self.manager.args.toggle_user_activeness
+            try:
+                user.is_active = distutils.util.strtobool(activeness)
+            except ValueError:
+                print "Lütfen True ya da False değeri giriniz."
+                return
+            user.blocking_save()
             return
+        # create
         if User.objects.filter(username=self.manager.args.username).count():
             print("User already exists!")
             return
