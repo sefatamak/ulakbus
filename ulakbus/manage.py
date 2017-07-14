@@ -318,69 +318,144 @@ class DeployZatoServices(Command):
 
         return service_payload
 
+
 class RoleProcess(Command):
     CMD_NAME = 'role_process'
-    HELP = """Role ekleme,cikarma ve arama islemleri yapilir."""
+    HELP = """Role add, delete. Permission list, delete, add, search."""
     PARAMS = [
         {'name': 'username', 'required': True, 'help': 'Login username'},
-        {'name': 'add', 'help': 'Add permission.[Required : Role name]'}, #permission add delete list olarak degistirilebilir. Role name ile birlikte kullanilir.
-        {'name': 'delete', 'help': 'Delete permission.[Required:Role name'}, #Role name ile birlikte kullanilir.
-        {'name': 'list', 'action': 'store_true', 'help': 'Permissions list'},
-        {'name': 'search', 'help': 'Search permission.Parameter:[Permission name]'},
-        {'name': 'role_name', 'help': 'Role name'},
+        {'name': 'add_perm', 'help': 'Add permission.'},
+        {'name': 'delete_perm', 'help': 'Delete permission.'},
+        {'name': 'list_perm', 'action': 'store_true', 'help': 'Permissions list'},
+        {'name': 'search_perm', 'help': 'Search permission. [Permission name]'},
+        {'name': 'abs_role', 'help': 'Abstract role name'},
         {'name': 'add_role', 'help': 'Role add [Role key]'},
-        {'name': 'delete_role', 'help': 'Role delete.Parameter:[Role name]'}
+        {'name': 'delete_role', 'help': 'Role delete. [Role name]'}
     ]
 
-    def run(self):
-        from ulakbus.models import User,Role
-        user = User.objects.get(username=self.manager.args.username)
+    def check_user(self):
+        from ulakbus.models import User
+        try:
+            user = User.objects.get(username=self.manager.args.username)
+            return user
+        except ObjectDoesNotExist:
+            print "Böyle bir kullanıcı bulunmamaktadır. Lütfen geçerli bir kullanıcı adı giriniz."
+            return
+
+    def check_error(self, abstract_role):
+        try:
+            abstract_role = AbstractRole.objects.get(name=abstract_role)
+            return abstract_role
+        except ObjectDoesNotExist:
+            print "Böyle bir abstract rol bulunmamaktadır. Lütfen geçerli bir abstract rol giriniz."
+            exit(1)
+
+    def add_role(self):
+        from ulakbus.models import Role
+        user = self.check_user()
+        abstract_role = self.check_error(self.manager.args.add_role)
+        if Role.objects.filter(user=user, abstract_role=abstract_role).count():
+            print "Kullanıcıya ait zaten böyle bir rol bulunmaktadır. Lütfen başka bir rol ismi giriniz."
+            return
+        role = Role(user=user, abstract_role=abstract_role)
+        role.name = "%s | %s" % (self.manager.args.add_role, user.username)
+        role.blocking_save()
+
+    def delete_role(self):
+        from ulakbus.models import User, Role
+        user = self.check_user()
+        abstract_role = self.check_error(self.manager.args.delete_role)
+        role = Role.objects.get(user=user, abstract_role=abstract_role)
+        role.user = User()
+        role.blocking_save()
+        for i, r in enumerate(user.role_set):
+            if r.role.abstract_role == role.abstract_role:
+                user.role_set[i].remove()
+                user.blocking_save()
+                return
+
+    def add_perm(self):
+        from ulakbus.models import Role
+        user = self.check_user()
+        roles = Role.objects.filter(user=user)
+        count = roles.count()
+        if count == 0:
+            print "Kullanıcıya ait rol bulunmamaktadır."
+        elif count == 1:
+            role = Role.objects.get(user=user)
+            role.add_permission_by_name(self.manager.args.add_perm, True)
+            role.save()
+        else:
+            if not self.manager.args.abs_role:
+                print "Kullanıcıya ait birden fazla rol bulunmaktadır. --abs_role parametresi ile rol belirtiniz.\nKullanıcıya Ait Rollerin Listesi"
+                for i in roles:
+                    print i.abstract_role
+            else:
+                abstract_role = self.check_error(self.manager.args.abs_role)
+                role = Role.objects.get(user=user, abstract_role=abstract_role)
+                role.add_permission_by_name(self.manager.args.add_perm, True)
+                role.save()
+
+    def delete_perm(self):
+        from ulakbus.models import Role
+        user = self.check_user()
+        roles = Role.objects.filter(user=user)
+        count = roles.count()
+        if count == 0:
+            print "Kullanıcıya ait rol bulunmamaktadır."
+        elif count == 1:
+            role = Role.objects.get(user=user)
+            role.remove_permission_by_name(self.manager.args.delete_perm)
+            role.save()
+        else:
+            if not self.manager.args.abs_role:
+                print "Kullanıcıya ait birden fazla rol bulunmaktadır. --abs_role parametresi ile rol belirtmelisiniz. Kullanıcıya Ait Rollerin Listesi"
+                for i in roles:
+                    print i.abstract_role
+            else:
+                abstract_role = self.check_error(self.manager.args.abs_role)
+                role = Role.objects.get(user=user, abstract_role=abstract_role)
+                role.remove_permission_by_name(self.manager.args.delete_perm)
+                role.save()
+
+    def list_perm(self):
+        from ulakbus.models import Role
+        user = self.check_user()
+        for i in user.role_set:
+            role = Role.objects.get(i.role.key)
+            name = role.name.split('|')
+            print "\n", name[0], "Rolüne Ait İzinlerin Listesi\n\n"
+            for j in role.get_permissions():
+                print j
+
+    def search_perm(self):
+        from ulakbus.models import Role
+        exist = 0
+        user = self.check_user()
         role_list = []
         for i in user.role_set:
-            print i.role.key
-            r = Role.objects.get(i.role.key,delete=False)
+            r = Role.objects.get(i.role.key)
             role_list.append(r)
+        for i in user.role_set:
+            role = Role.objects.get(i.role.key)
+            for j in role.get_permissions():
+                if (self.manager.args.search_perm == j):
+                    print "Aranan izin %s rolünde bulundu." % (role.abstract_role)
+                    exist = 1
+        if exist == 0:
+            print "Aranan izin bulunamadı."
 
-        if self.manager.args.list:
-            j = 0
-            for i in role_list:
-                name = i.name.split('|')
-                print name[0],"Rolüne Ait İzinlerin Listesi\n\n"
-                print i.get_permissions(),"\n\n"
-        if self.manager.args.add:
-            role_name = self.manager.args.role_name.split('|')[0] + " | %s" %(user.username)
-            role = Role.objects.get(name=role_name,delete=False)
-            role.add_permission_by_name(self.manager.args.add,True)
-            role.save()
-        if self.manager.args.search:
-            if self.manager.args.search in role_list:
-                print "Aranan izin bulundu."
-            else:
-                print "Aranan izin bulunamadi."
-        if self.manager.args.delete:
-            role_name = self.manager.args.role_name.split('|')[0] + " | %s" %(user.username)
-            role = Role.objects.get(name=role_name)
-            role.remove_permission(self.manager.args.delete)
-            role.save()
-        if self.manager.args.add_role:
-            role = Role.objects.get(self.manager.args.add_role)
-            print role.name,role.delete
-            role.user = user
-            role.save()
-        if self.manager.args.delete_role:
-            role = Role.objects.get(self.manager.args.delete_role)
-            role.user = User()
-            role.save()
-            for i,r in enumerate(user.role_set):
-                print i,r
-                if r.role.key == self.manager.args.delete_role:
-                    print user.role_set[i]
-                    user.role_set[i].remove()
-                    user.blocking_save()
-                    return
+    def check_run_attr(self, item):
+        if hasattr(self, item):
+            self.__getattribute__(item)()
+
+    def run(self):
+        for arg, val in vars(self.manager.args).items():
+            if val is not None and val is not False:
+                self.check_run_attr(arg)
 
 
-environ['PYOKO_SETTINGS'] = 'ulakubus.settings'
+environ['PYOKO_SETTINGS'] = 'ulakbus.settings'
 environ['ZENGINE_SETTINGS'] = 'ulakbus.settings'
 
 if __name__ == '__main__':

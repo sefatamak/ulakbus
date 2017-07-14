@@ -425,7 +425,18 @@ class Role(Model):
         Args:
              perm: :class:`Permission` object.
         """
-        for p in Permission.objects.filter(code__contains=perm):
+        del self.Permissions[perm.key]
+        PermissionCache(self.key).delete()
+        self.save()
+
+    def remove_permission_by_name(self, code):
+        """
+        Role nesnesinden Permission silmek için kullanılır.
+
+        Args:
+             code (str): Permission nesnelerini silmekte kullanılır.
+        """
+        for p in Permission.objects.filter(code__contains=code):
             if p in self.Permissions:
                 del self.Permissions[p]
         PermissionCache(self.key).delete()
