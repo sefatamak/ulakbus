@@ -21,8 +21,8 @@ class CreateUser(Command):
         {'name': 'abstract_role', 'default': 'BaseAbsRole', 'help': 'Name of the AbstractRole'},
         {'name': 'super', 'action': 'store_true', 'help': 'This is a super user'},
         {'name': 'active', 'action': 'store_true', 'help': 'This is a active user'},
-        {'name': 'toggle_user_activeness',
-         'help': 'Users activity status, True : This makes the user active False : This makes the user passive'},
+        {'name': 'toggle_is_user_active',
+         'help': 'Toggle user active flag, True is to activate user; False is to deactivate user'},
         {'name': 'permission_query', 'default': "code:crud* OR code:login* OR code:logout*",
          'help': 'Permissions which will be returned from this query will be granted to the user. '
                  'Defaults to: "code:crud* OR code:login* OR code:logout*"'},
@@ -32,14 +32,15 @@ class CreateUser(Command):
         from ulakbus.models import AbstractRole, User, Role, Permission
         import distutils.util
         from pyoko.exceptions import ObjectDoesNotExist
-        # update
-        if self.manager.args.toggle_user_activeness is not None:
+
+        # update existing users
+        if self.manager.args.toggle_is_user_active is not None:
             try:
                 user = User.objects.get(username=self.manager.args.username)
             except ObjectDoesNotExist:
                 print "Böyle bir kullanıcı bulunmamaktadır."
                 return
-            activeness = self.manager.args.toggle_user_activeness
+            activeness = self.manager.args.toggle_is_user_active
             try:
                 user.is_active = distutils.util.strtobool(activeness)
             except ValueError:
@@ -47,13 +48,14 @@ class CreateUser(Command):
                 return
             user.blocking_save()
             return
-        # create
+
+        # create new user
         if User.objects.filter(username=self.manager.args.username).count():
             print("User already exists!")
             return
         if not self.manager.args.active:
             print(
-                "Kullanıcının sisteme login olmasını istiyorsanız aktifleştirmeyi unutmayin. Aktifleştirmek için --active_user komutunu kullanın.")
+                "Kullanıcının sisteme login olmasını istiyorsanız aktifleştirmeyi unutmayınız. Aktifleştirmek için --toggle_is_user_active parametresini kullanınız.")
         abs_role, new = AbstractRole.objects.get_or_create(name=self.manager.args.abstract_role)
         user = User(username=self.manager.args.username, superuser=self.manager.args.super,
                     is_active=self.manager.args.active)
