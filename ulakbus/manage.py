@@ -340,7 +340,7 @@ class RoleProcess(Command):
             return user
         except ObjectDoesNotExist:
             print "Böyle bir kullanıcı bulunmamaktadır. Lütfen geçerli bir kullanıcı adı giriniz."
-            return
+            exit(1)
 
     def check_error(self, abstract_role):
         try:
