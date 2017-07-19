@@ -12,10 +12,10 @@ class TestCase(BaseTestCase):
         user = User.objects.get(username="ulakbus")
         self.prepare_client('/idari_ceza_kontrol', user=user)
         personel = Personel.objects.get(key="OI3vq7rWIaTdSNUj4KwSBpeHMrc")
-        ceza = Ceza(personel=personel, baslama_tarihi="27.01.2008", bitis_tarihi="04.01.2012",
+        ceza = Ceza(personel=personel, dosya_sira_no="1820201036", baslama_tarihi="27.01.2008", bitis_tarihi="04.01.2012",
                     takdir_edilen_ceza=1)
         ceza.blocking_save()
-        ceza = Ceza(personel=personel, baslama_tarihi="15.01.2010", bitis_tarihi="03.01.2011",
+        ceza = Ceza(personel=personel, dosya_sira_no="1820201037", baslama_tarihi="15.01.2010", bitis_tarihi="03.01.2011",
                     takdir_edilen_ceza=2)
         ceza.blocking_save()
         resp = self.client.post()
