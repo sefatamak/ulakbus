@@ -30,53 +30,38 @@ class IdariCezaKontrol(CrudView):
     def ceza_goruntule(self):
         self.current.output["meta"]["allow_actions"] = True
         self.output['objects'] = [
-            [_(u'Ad'), _(u'Soyad'), _(u'Başlangıç Tarihi'), _(u'Bitiş Tarihi'), _(u'Dosya Sıra No'), _(u'Ceza Türü')]]
+            [_(u'Ad'), _(u'Soyad'), _(u'Dosya Sıra No'), _(u'Başlangıç Tarihi'), _(u'Bitiş Tarihi'), _(u'Ceza Türü')]]
         ceza_suresi = datetime.now() - relativedelta(years=5)
         for ceza in Ceza.objects.filter(baslama_tarihi__lte=ceza_suresi):
-            ad = ceza.personel.ad
-            soyad = ceza.personel.soyad
-            dosya_sira_no = ceza.dosya_sira_no
-            bas_tarihi = ceza.baslama_tarihi.strftime(DATE_DEFAULT_FORMAT) if ceza.baslama_tarihi else ''
-            bitis_tarihi = ceza.bitis_tarihi.strftime(DATE_DEFAULT_FORMAT) if ceza.bitis_tarihi else ''
-            ceza_turu = ceza.get_takdir_edilen_ceza_display()
             list_item = {
-                "fields": [ad, soyad, bas_tarihi, bitis_tarihi, dosya_sira_no, ceza_turu],
+                "fields": self.ceza_detay(ceza),
                 "actions": [
                     {'name': _(u'Sil'), 'cmd': 'sil', 'show_as': 'button',
                      'object_key': 'data_key'}
                 ],
                 'key': ceza.key}
-            self.output['object_title'] = "Ceza Görüntüleme Formu"
+            self.output['object_title'] = "Personellere Ait 5 Yılı Geçen Cezaların Listesi"
             self.output['objects'].append(list_item)
 
     def ceza_sil_onay_form(self):
-        from ulakbus.settings import DATE_DEFAULT_FORMAT
         ceza = Ceza.objects.get(key=self.input['data_key'])
-        ad = ceza.personel.ad
-        soyad = ceza.personel.soyad
-        dosya_sira_no = ceza.dosya_sira_no
-        bas_tarihi = ceza.baslama_tarihi.strftime(DATE_DEFAULT_FORMAT) if ceza.baslama_tarihi else ''
-        bitis_tarihi = ceza.bitis_tarihi.strftime(DATE_DEFAULT_FORMAT) if ceza.bitis_tarihi else ''
-        ceza_turu = ceza.get_takdir_edilen_ceza_display()
+        ceza = self.ceza_detay(ceza)
         self.current.task_data['object_id'] = self.input['data_key']
         _form = SilOnayForm(title="Ceza Silme Onay Form")
         _form.help_text = _(
-            u"""Personel adı: **%(ad)s**
+            u"""Personel adı: **{}**
             
-            Personel soyadı: **%(soyad)s**
+            Personel soyadı: **{}**
             
-            Dosya Sıra No: **%(dosya_sira_no)s**
+            Dosya Sıra No: **{}**
             
-            Ceza Başlangıç Tarihi: **%(bas_tarihi)s**
+            Ceza Başlangıç Tarihi: **{}**
             
-            Ceza Bitiş Tarihi: **%(bitis_tarihi)s**
+            Ceza Bitiş Tarihi: **{}**
             
-            Ceza Türü: **%(ceza_turu)s**
+            Ceza Türü: **{}**
             
-            Bilgilerine sahip cezayı silmek istiyor musunuz ?""") % {
-                              'ad': ad, 'soyad': soyad, 'dosya_sira_no': dosya_sira_no, 'bas_tarihi': bas_tarihi,
-                              'bitis_tarihi': bitis_tarihi, 'ceza_turu': ceza_turu
-                          }
+            Bilgilerine sahip cezayı silmek istiyor musunuz ?""".format(*ceza))
         self.form_out(_form)
 
     def ceza_sil(self):
@@ -85,6 +70,18 @@ class IdariCezaKontrol(CrudView):
         del self.current.task_data['object_id']
 
     def ceza_bilgilendirme(self):
-        form = JsonForm(title="Ceza Bilgilendirme Formu")
-        form.help_text = "Listelenecek ceza bulunamadı."
+        form = JsonForm(title="Personellere Ait 5 Yılı Geçen Ceza Bulunamadı")
+        form.help_text = "Sistemde bulunan personellere ait listelenecek ceza bulunamadı."
+        form.yonlendir = fields.Button(_(u'Anasayfaya Git'))
         self.form_out(form)
+
+    def yonlendir(self):
+        self.current.output['cmd'] = 'reload'
+
+    def ceza_detay(self, ceza):
+        return [ceza.personel.ad,
+                ceza.personel.soyad,
+                ceza.dosya_sira_no,
+                ceza.baslama_tarihi.strftime(DATE_DEFAULT_FORMAT) if ceza.baslama_tarihi else '',
+                ceza.bitis_tarihi.strftime(DATE_DEFAULT_FORMAT) if ceza.bitis_tarihi else '',
+                ceza.get_takdir_edilen_ceza_display()]

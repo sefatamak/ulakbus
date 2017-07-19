@@ -3,31 +3,34 @@
 #
 # This file is licensed under the GNU General Public License v3
 # (GPLv3).  See LICENSE.txt for details.
-from ulakbus.models import User, Ceza
+from ulakbus.models import User, Ceza, Personel
 from zengine.lib.test_utils import BaseTestCase
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
 
 
 class TestCase(BaseTestCase):
     def test_idari_ceza_kontrol(self):
         user = User.objects.get(username="ulakbus")
         self.prepare_client('/idari_ceza_kontrol', user=user)
+        personel = Personel.objects.get(key="OI3vq7rWIaTdSNUj4KwSBpeHMrc")
+        ceza = Ceza(personel=personel, baslama_tarihi="27.01.2008", bitis_tarihi="04.01.2012",
+                    takdir_edilen_ceza=1)
+        ceza.blocking_save()
+        ceza = Ceza(personel=personel, baslama_tarihi="15.01.2010", bitis_tarihi="03.01.2011",
+                    takdir_edilen_ceza=2)
+        ceza.blocking_save()
         resp = self.client.post()
-        ceza_suresi = datetime.now() - relativedelta(years=5)
-        ceza_sayisi = Ceza.objects.filter(baslama_tarihi__lte=ceza_suresi).count()
-        if ceza_sayisi > 0:
-            assert resp.json['object_title'] == "Ceza Görüntüleme Formu"
-            resp = self.client.post(cmd="sil", data_key="2rlWHRkLJfxpvzVFjl4SDZmJWGN")
-            assert resp.json['forms']['schema']['title'] == "Ceza Silme Onay Form"
-            resp = self.client.post(form={'iptal': 1})
-            assert resp.json['object_title'] == "Ceza Görüntüleme Formu"
-            assert Ceza.objects.filter(baslama_tarihi__lte=ceza_suresi).count() == ceza_sayisi
-            resp = self.client.post(cmd="sil", data_key="2rlWHRkLJfxpvzVFjl4SDZmJWGN")
-            assert resp.json['forms']['schema']['title'] == "Ceza Silme Onay Form"
-            resp = self.client.post(form={'onayla': 1}, cmd="onayla")
-            assert Ceza.objects.filter(baslama_tarihi__lte=ceza_suresi).count() == ceza_sayisi - 1
-            if Ceza.objects.filter(baslama_tarihi__lte=ceza_suresi).count() > 0:
-                assert resp.json['object_title'] == "Ceza Görüntüleme Formu"
-        else:
-            assert resp.json['forms']['schema']['title'] == "Ceza Bilgilendirme Formu"
+        assert resp.json['object_title'] == "Personellere Ait 5 Yılı Geçen Cezaların Listesi"
+        data_key = Ceza.objects.filter()[0].key
+        resp = self.client.post(cmd="sil", data_key=data_key)
+        assert resp.json['forms']['schema']['title'] == "Ceza Silme Onay Form"
+        resp = self.client.post(form={'iptal': 1})
+        assert resp.json['object_title'] == "Personellere Ait 5 Yılı Geçen Cezaların Listesi"
+        resp = self.client.post(cmd="sil", data_key=data_key)
+        assert resp.json['forms']['schema']['title'] == "Ceza Silme Onay Form"
+        resp = self.client.post(form={'onayla': 1}, cmd="onayla")
+        assert resp.json['object_title'] == "Personellere Ait 5 Yılı Geçen Cezaların Listesi"
+        data_key = Ceza.objects.filter()[0].key
+        resp = self.client.post(cmd="sil", data_key=data_key)
+        assert resp.json['forms']['schema']['title'] == "Ceza Silme Onay Form"
+        resp = self.client.post(form={'onayla': 1}, cmd="onayla")
+        assert resp.json['forms']['schema']['title'] == "Personellere Ait 5 Yılı Geçen Ceza Bulunamadı"
