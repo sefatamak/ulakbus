@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="1.8.0">
   <bpmn:collaboration id="Collaboration_1jpejq7">
-    <bpmn:participant id="Participant_01o1gjc" name="Terfisi Gelen Personel Kontrol" processRef="terfi_kontrol" />
+    <bpmn:participant id="Participant_01o1gjc" name="Terfisi Gelen Personel" processRef="sekiz_yillik_terfi" />
   </bpmn:collaboration>
-  <bpmn:process id="terfi_kontrol" name="Terfisi Gelen Personel Kontrol" isExecutable="false">
+  <bpmn:process id="sekiz_yillik_terfi" name="Terfisi Gelen Personel" isExecutable="false">
     <bpmn:startEvent id="StartEvent_1">
       <bpmn:outgoing>SequenceFlow_17ms0o1</bpmn:outgoing>
     </bpmn:startEvent>
@@ -17,32 +17,32 @@
       <bpmn:outgoing>SequenceFlow_141b54c</bpmn:outgoing>
       <bpmn:outgoing>SequenceFlow_1pk035j</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="Task_0kix8x5" name="Terfi Kontrol" camunda:class="personel.terfi_kontrol.TerfiKontrol.terfi_kontrol">
+    <bpmn:serviceTask id="Task_0kix8x5" name="Terfi Kontrol" camunda:class="personel.sekiz_yillik_terfi.TerfiKontrol.terfi_kontrol">
       <bpmn:incoming>SequenceFlow_17ms0o1</bpmn:incoming>
       <bpmn:incoming>SequenceFlow_0zmhscy</bpmn:incoming>
       <bpmn:incoming>SequenceFlow_1pk035j</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_1h7jfsh</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_0uu2xfu" name="Terfi Et" camunda:class="personel.terfi_kontrol.TerfiKontrol.terfi_et">
+    <bpmn:serviceTask id="Task_0uu2xfu" name="Terfi Et" camunda:class="personel.sekiz_yillik_terfi.TerfiKontrol.terfi_et">
       <bpmn:incoming>SequenceFlow_141b54c</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_0zmhscy</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:userTask id="Task_143g89e" name="Terfi Listesi Görüntüle" camunda:assignee="personel.terfi_kontrol.TerfiKontrol.terfi_listesi_goruntule">
+    <bpmn:userTask id="Task_143g89e" name="Terfi Listesi Görüntüle" camunda:assignee="personel.sekiz_yillik_terfi.TerfiKontrol.terfi_listesi_goruntule">
       <bpmn:incoming>SequenceFlow_1qx47m2</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_0i1cxrd</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:userTask id="Task_0tlt8w9" name="Terfi Bilgilendirme" camunda:assignee="personel.terfi_kontrol.TerfiKontrol.terfi_bilgilendirme">
+    <bpmn:userTask id="Task_0tlt8w9" name="Terfi Bilgilendirme" camunda:assignee="personel.sekiz_yillik_terfi.TerfiKontrol.terfi_bilgilendirme">
       <bpmn:incoming>SequenceFlow_1quv8oo</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_16ahfjf</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:userTask id="Task_0c9mljk" name="Terfi Onay Form" camunda:assignee="personel.terfi_kontrol.TerfiKontrol.terfi_onay_form">
+    <bpmn:userTask id="Task_0c9mljk" name="Terfi Onay Form" camunda:assignee="personel.sekiz_yillik_terfi.TerfiKontrol.terfi_onay_form">
       <bpmn:incoming>SequenceFlow_0i1cxrd</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_1d4s4j2</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:endEvent id="EndEvent_13294r7">
       <bpmn:incoming>SequenceFlow_1qa2bp2</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:serviceTask id="Task_0ibg0hw" name="Anasayfaya Yönlendir" camunda:class="personel.terfi_kontrol.TerfiKontrol.yonlendir">
+    <bpmn:serviceTask id="Task_0ibg0hw" name="Anasayfaya Yönlendir" camunda:class="personel.sekiz_yillik_terfi.TerfiKontrol.yonlendir">
       <bpmn:incoming>SequenceFlow_16ahfjf</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_1qa2bp2</bpmn:outgoing>
     </bpmn:serviceTask>
