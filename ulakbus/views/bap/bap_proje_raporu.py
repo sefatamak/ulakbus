@@ -56,6 +56,13 @@ class BapProjeRaporu(CrudView):
     class Meta:
         model = "BAPRapor"
 
+    def __init__(self, current):
+        """
+        bap_ogretim_uyesi_basvuru_listeme iş akışından gelen current kullanılıyor.
+
+        """
+        super(BapProjeRaporu, self).__init__(current)
+
     def rapor_turu_sec(self):
         """
         Seçili olan projenin rapor türünün seçilmesi işlemlerini gerçekleştirir.
@@ -73,13 +80,12 @@ class BapProjeRaporu(CrudView):
         self.form_out(form)
 
     def rapor_kaydet(self):
-        # TODO:proje id'si gelecek. Ona göre işlemler yapılacak.
         """
         Seçili olan rapor dosyasının veritabanına kaydedilmesi işlemini gerçekleştirir.
 
         """
         belge = self.input["form"]["belge"]
-        proje = BAPProje.objects.filter()[0]
+        proje = BAPProje.objects.get(self.current.task_data['bap_proje_id'])
         rapor = BAPRapor(proje=proje, belge=belge, durum=1,
                          tur=self.current.task_data['RaporTurForm']['tur'])
         rapor.blocking_save()
@@ -153,7 +159,6 @@ class BapProjeRaporu(CrudView):
         self.form_out(form)
 
     def gundeme_al(self):
-        # TODO:proje id'si gelecek. Ona göre işlemler yapılacak.
         """
         Koordinasyon birimi tarafından onaylanan projenin gündeme alınması işlemini gerçekleştirir.
         Rapor nesnesini başarılı durumuna getirme işlemini gerçekleştirir.
@@ -162,7 +167,7 @@ class BapProjeRaporu(CrudView):
         rapor = BAPRapor.objects.get(self.current.task_data['rapor']['key'])
         rapor.durum = 2
         rapor.save()
-        proje = BAPProje.objects.filter()[0]
+        proje = BAPProje.objects.get(self.current.task_data['bap_proje_id'])
         gundem_tipi = 6 if self.current.task_data['RaporTurForm']['tur'] == 1 else 5
         gundem = BAPGundem(gundem_tipi=gundem_tipi, proje=proje)
         gundem.save()
